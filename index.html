@@ -1,0 +1,662 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-touch-fullscreen" content="yes">
+    <link rel="apple-touch-icon" href="http://hy.xmyu.top/hy.jpg">
+    <title>火焰官网</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <!-- 欢迎页面 -->
+    <div class="welcome-overlay" id="welcomeOverlay">
+        <div class="welcome-content">
+            <h1>欢迎访问火焰官网</h1>
+            <p>点击任意位置进入</p>
+        </div>
+    </div>
+
+    <!-- 视频背景 -->
+    <video id="bgVideo" class="bg-video" loop playsinline muted autoplay>
+        <source src="http://hy.xmyu.top/jm.mp4" type="video/mp4">
+    </video>
+
+    <!-- 修改音频元素 -->
+    <audio id="bgMusic" 
+        loop 
+        crossorigin="anonymous" 
+        playsinline 
+        x-webkit-airplay="allow" 
+        webkit-playsinline 
+        preload="auto"
+        controlsList="nodownload">
+        <source src="http://hy.xmyu.top/hyxw/afdaeedaaed.mp3" type="audio/mp3">
+    </audio>
+
+
+    
+    <!-- 主要内容 -->
+    <main id="mainContainer">
+        <div class="profile-section">
+            <div class="avatar-container">
+                <img src="http://hy.xmyu.top/hy.jpg" alt="头像" class="avatar">
+                <div class="visualizer-container">
+                    <canvas id="visualizer"></canvas>
+                </div>
+            </div>
+            <h1>火焰小窝</h1>
+            <p class="tagline">
+                <span class="typewriter text1">Frontend Developer & Designer</span>
+                <span class="typewriter text2">Your Custom Second Text</span>
+            </p>
+        </div>
+
+        <div class="social-section" role="navigation" aria-label="社交媒体链接">
+            <a href="https://v.kuaishou.com/kQ6teD" class="social-card" role="link" aria-label="关注竟子的视频频道" target="_blank">
+                <img src="https://api.iconify.design/ri:video-line.svg?color=white" alt="关注火焰">
+                <span class="social-name">关注火焰</span>
+            </a>
+            
+            <a href="https://t.me/HYBH666" class="social-card" role="link" aria-label="TG频道@HYBH666" target="_blank">
+                <img src="https://api.iconify.design/ri:telegram-line.svg?color=white" alt="TG频道@HYBH666">
+                <span class="social-name">TG频道@HYBH666</span>
+            </a>
+            
+            <a href="https://qm.qq.com/q/GAiNsEnDuo" class="social-card" role="link" aria-label="QQ群" target="_blank">
+                <img src="https://api.iconify.design/ri:qq-line.svg?color=white" alt="QQ群">
+                <span class="social-name">QQ群</span>
+            </a>
+            
+            <a href="http://cc.xmyu.top" class="social-card" role="link" aria-label="Cc总网" target="_blank">
+                <img src="https://api.iconify.design/ri:global-line.svg?color=white" alt="Cc总网">
+                <span class="social-name">Cc总网</span>
+            </a>
+            
+            <a href="http://hyfk.xmyu.top/links/49B2F20C" class="social-card" role="link" aria-label="提卡网" target="_blank">
+                <img src="https://api.iconify.design/ri:shopping-cart-line.svg?color=white" alt="提卡网">
+                <span class="social-name">提卡网</span>
+            </a>
+            
+            <a href="https://www.kuaishou.com/profile/3xvq8wmhsgv27cg" class="social-card" role="link" aria-label="竟子直播号" target="_blank">
+                <img src="https://api.iconify.design/ri:live-line.svg?color=white" alt="火焰直播号">
+                <span class="social-name">火焰直播号</span>
+            </a>
+        </div>
+    </main>
+
+    <!-- 音量状态指示器 -->
+    <div class="volume-indicator"></div>
+
+    <!-- 音乐控制按钮 -->
+    <div class="music-control">
+        <button id="toggleMusic">
+            <i class="fas fa-music"></i>
+            <span>双击任意位置开启/关闭背景音乐</span>
+        </button>
+    </div>
+
+    <script>
+        // 1. 首先定义全局变量
+        let audioContext, analyser, dataArray;
+        let animationId;
+        const bgMusic = document.getElementById('bgMusic');
+        const video = document.getElementById('bgVideo');
+        const welcomeOverlay = document.getElementById('welcomeOverlay');
+        const volumeIndicator = document.querySelector('.volume-indicator');
+        const canvas = document.getElementById('visualizer');
+        const ctx = canvas.getContext('2d');
+
+        // 2. 设备检测工具
+        const deviceInfo = {
+            isIOS: () => /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream,
+            isAndroid: () => /Android/.test(navigator.userAgent),
+            isMobile: () => {
+                return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ||
+                    (window.innerWidth <= 768);
+            },
+            isSmallScreen: () => window.innerWidth < 375
+        };
+
+        // 3. iOS 音频解锁函数
+        async function unlockIOSAudio() {
+            if (!deviceInfo.isIOS()) return;
+            
+            try {
+                audioContext = new (window.webkitAudioContext || window.AudioContext)({
+                    latencyHint: 'interactive',
+                    sampleRate: 44100
+                });
+                
+                analyser = audioContext.createAnalyser();
+                const source = audioContext.createMediaElementSource(bgMusic);
+                source.connect(analyser);
+                analyser.connect(audioContext.destination);
+                
+                analyser.fftSize = deviceInfo.isSmallScreen() ? 32 : 64;
+                dataArray = new Uint8Array(analyser.frequencyBinCount);
+                
+                return true;
+            } catch (e) {
+                console.error('iOS audio unlock failed:', e);
+                return false;
+            }
+        }
+
+        // 4. 初始化音频分析器
+        function initAudioAnalyser() {
+            try {
+                audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                analyser = audioContext.createAnalyser();
+                const source = audioContext.createMediaElementSource(bgMusic);
+                
+                // 调整分析器参数
+                analyser.fftSize = 64; // 降低采样以获得更好的视觉效果
+                analyser.smoothingTimeConstant = 0.8; // 添加平滑效果
+                
+                source.connect(analyser);
+                analyser.connect(audioContext.destination);
+                
+                dataArray = new Uint8Array(analyser.frequencyBinCount);
+                
+                // 初始化完成后立即开始绘制
+                requestAnimationFrame(drawVisualizer);
+                
+                return true;
+            } catch (error) {
+                console.error('Audio analyzer initialization failed:', error);
+                return false;
+            }
+        }
+
+        // 5. 欢迎页面点击事件
+        welcomeOverlay.addEventListener('click', async () => {
+            welcomeOverlay.classList.add('fade-out');
+            
+            try {
+                if (deviceInfo.isIOS()) {
+                    const unlocked = await unlockIOSAudio();
+                    if (unlocked) {
+                        bgMusic.volume = 1.0;
+                        await bgMusic.play();
+                    }
+                } else {
+                    if (!audioContext) {
+                        initAudioAnalyser();
+                    }
+                    bgMusic.volume = 0.5;
+                    await bgMusic.play();
+                }
+                
+                if (analyser) {
+                    requestAnimationFrame(drawVisualizer);
+                }
+                volumeIndicator.classList.add('active');
+                await video.play();
+                
+            } catch (error) {
+                console.error('Media playback failed:', error);
+            }
+            
+            // 处理欢迎页面移除
+            welcomeOverlay.addEventListener('transitionend', function handler(e) {
+                if (e.propertyName === 'opacity') {
+                    welcomeOverlay.removeEventListener('transitionend', handler);
+                    welcomeOverlay.remove();
+                }
+            });
+        });
+
+        // 6. 双击控制声音逻辑
+        let lastClickTime = 0;
+        const musicButton = document.getElementById('toggleMusic');
+
+        document.addEventListener('click', async (e) => {
+            const currentTime = new Date().getTime();
+            const timeDiff = currentTime - lastClickTime;
+            
+            if (timeDiff < 300) {
+                if (bgMusic.paused) {
+                    if (deviceInfo.isIOS()) {
+                        if (audioContext && audioContext.state === 'suspended') {
+                            await audioContext.resume();
+                        }
+                        bgMusic.play().catch(console.error);
+                    } else {
+                        bgMusic.play();
+                    }
+                    bgMusic.volume = deviceInfo.isIOS() ? 1.0 : 0.5;
+                    if (analyser) {
+                        drawVisualizer();
+                    }
+                    volumeIndicator.classList.add('active');
+                    // 添加播放状态类
+                    musicButton.classList.remove('paused');
+                    musicButton.classList.add('playing');
+                } else {
+                    bgMusic.pause();
+                    if (animationId) {
+                        cancelAnimationFrame(animationId);
+                    }
+                    volumeIndicator.classList.remove('active');
+                    // 添加暂停状态类
+                    musicButton.classList.remove('playing');
+                    musicButton.classList.add('paused');
+                }
+            }
+            lastClickTime = currentTime;
+        });
+
+        // 雨滴效果相关代码已移除
+
+        // 修改调试信息函数，添加更多详细信息
+        function debugAudioSystem() {
+            console.log('=== Debug Info ===');
+            console.log('Device Info:', {
+                isMobile: deviceInfo.isMobile(),
+                userAgent: navigator.userAgent,
+                screenWidth: window.innerWidth,
+                screenHeight: window.innerHeight
+            });
+            
+            console.log('Audio System:', {
+                audioContextExists: !!audioContext,
+                analyserExists: !!analyser,
+                dataArrayExists: !!dataArray,
+                canvasExists: !!canvas
+            });
+            
+            if (canvas) {
+                console.log('Canvas Info:', {
+                    width: canvas.width,
+                    height: canvas.height,
+                    styleWidth: canvas.style.width,
+                    styleHeight: canvas.style.height,
+                    context: !!ctx
+                });
+            }
+            
+            if (audioContext) {
+                console.log('AudioContext Info:', {
+                    state: audioContext.state,
+                    sampleRate: audioContext.sampleRate,
+                    baseLatency: audioContext.baseLatency
+                });
+            }
+            
+            if (analyser) {
+                console.log('Analyser Info:', {
+                    fftSize: analyser.fftSize,
+                    frequencyBinCount: analyser.frequencyBinCount,
+                    minDecibels: analyser.minDecibels,
+                    maxDecibels: analyser.maxDecibels
+                });
+            }
+            
+            if (bgMusic) {
+                console.log('Audio Element Info:', {
+                    paused: bgMusic.paused,
+                    currentTime: bgMusic.currentTime,
+                    readyState: bgMusic.readyState,
+                    networkState: bgMusic.networkState,
+                    error: bgMusic.error,
+                    src: bgMusic.currentSrc
+                });
+            }
+        }
+
+        // 设置 canvas 尺寸
+        function initCanvas() {
+            const avatarContainer = document.querySelector('.avatar-container');
+            const containerRect = avatarContainer.getBoundingClientRect();
+            
+            // 设置 canvas 的实际尺寸
+            canvas.width = 200;
+            canvas.height = 200;
+            
+            // 设置 canvas 的显示尺寸
+            canvas.style.width = '200px';
+            canvas.style.height = '200px';
+            
+            // 确保 canvas 居中于头像
+            canvas.style.position = 'absolute';
+            canvas.style.top = '50%';
+            canvas.style.left = '50%';
+            canvas.style.transform = 'translate(-50%, -50%)';
+            canvas.style.pointerEvents = 'none';
+        }
+
+        // 修改绘制可视化效果函数
+        function drawVisualizer() {
+            if (!analyser || !ctx) return;
+            
+            animationId = requestAnimationFrame(drawVisualizer);
+            
+            analyser.getByteFrequencyData(dataArray);
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            const centerX = canvas.width / 2;
+            const centerY = canvas.height / 2;
+            const radius = 40;  // 调整半径以适应头像大小
+            
+            // 设置全局合成操作
+            ctx.globalCompositeOperation = 'lighter';
+            
+            // 绘制背景光环
+            const gradient = ctx.createRadialGradient(centerX, centerY, radius - 5, centerX, centerY, radius + 30);
+            gradient.addColorStop(0, 'rgba(255, 255, 255, 0.1)');
+            gradient.addColorStop(0.5, 'rgba(255, 255, 255, 0.05)');
+            gradient.addColorStop(1, 'rgba(255, 255, 255, 0)');
+            ctx.fillStyle = gradient;
+            ctx.beginPath();
+            ctx.arc(centerX, centerY, radius + 30, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // 绘制频谱
+            for(let i = 0; i < dataArray.length; i++) {
+                const value = dataArray[i];
+                const barHeight = (value / 255) * 30;  // 调整条形高度
+                const angle = (i * 2 * Math.PI) / dataArray.length;
+                
+                // 计算位置
+                const x1 = centerX + Math.cos(angle) * radius;
+                const y1 = centerY + Math.sin(angle) * radius;
+                const x2 = centerX + Math.cos(angle) * (radius + barHeight);
+                const y2 = centerY + Math.sin(angle) * (radius + barHeight);
+                
+                // 创建渐变
+                const barGradient = ctx.createLinearGradient(x1, y1, x2, y2);
+                barGradient.addColorStop(0, `hsla(${i * 360 / dataArray.length}, 80%, 60%, 0.8)`);
+                barGradient.addColorStop(1, `hsla(${i * 360 / dataArray.length}, 90%, 70%, 0.2)`);
+                
+                // 绘制频谱条
+                ctx.beginPath();
+                ctx.moveTo(x1, y1);
+                ctx.lineTo(x2, y2);
+                ctx.strokeStyle = barGradient;
+                ctx.lineWidth = 2;
+                ctx.stroke();
+                
+                // 添加端点光点
+                ctx.beginPath();
+                ctx.arc(x2, y2, 2, 0, Math.PI * 2);
+                ctx.fillStyle = `hsla(${i * 360 / dataArray.length}, 80%, 70%, 0.8)`;
+                ctx.fill();
+            }
+            
+            // 重置合成模式
+            ctx.globalCompositeOperation = 'source-over';
+        }
+
+        // 在页面加载完成后初始化
+        window.addEventListener('load', () => {
+            initCanvas();
+        });
+
+        // 在窗口大小改变时重新初始化
+        window.addEventListener('resize', () => {
+            initCanvas();
+        });
+
+        // 添加屏幕旋转处理
+        window.addEventListener('orientationchange', () => {
+            setTimeout(() => {
+                if (deviceInfo.isMobile()) {
+                    const canvas = document.getElementById('visualizer');
+                    const avatarContainer = document.querySelector('.avatar-container');
+                    const containerRect = avatarContainer.getBoundingClientRect();
+                    const containerSize = containerRect.width;
+                    const canvasSize = deviceInfo.isSmallScreen() ? 160 : 180;
+                    const offset = (canvasSize - containerSize) / 2;
+                    
+                    canvas.style.width = canvasSize + 'px';
+                    canvas.style.height = canvasSize + 'px';
+                    canvas.style.top = -offset + 'px';
+                    canvas.style.left = -offset + 'px';
+                }
+            }, 300);  // 等待旋转动画完成
+        });
+
+        // 处理微信链接的特殊情况
+        document.getElementById('weixinLink').addEventListener('click', function(e) {
+            e.preventDefault();
+            // 检查是否在微信浏览器中
+            const isWeiXin = /MicroMessenger/i.test(navigator.userAgent);
+            if (isWeiXin) {
+                // 如果在微信中，显示提示或者二维码
+                alert('请长按二维码添加好友');
+            } else {
+                // 如果不在微信中，尝试打开微信
+                window.location.href = this.href;
+            }
+        });
+
+        // 为所有其他社交卡片添加点击效果，点击时添加点击动画及页面淡出效果后跳转网页
+        document.querySelectorAll('.social-card').forEach(card => {
+            card.addEventListener('click', function(e) {
+                e.preventDefault();
+                const href = this.getAttribute('href');
+                
+                // 添加离场动画
+                document.body.style.opacity = 0;
+                document.body.style.transform = 'scale(0.95)';
+                
+                setTimeout(() => {
+                    window.location.href = href;
+                }, 300);
+            });
+        });
+
+        // 添加调试信息
+        function debugVisualizer() {
+            console.log('Canvas:', {
+                width: canvas.width,
+                height: canvas.height,
+                style: canvas.style,
+                context: !!ctx
+            });
+            
+            console.log('Analyser:', {
+                active: !!analyser,
+                data: dataArray?.length,
+                fftSize: analyser?.fftSize
+            });
+            
+            console.log('Audio:', {
+                playing: !bgMusic.paused,
+                volume: bgMusic.volume,
+                context: audioContext?.state
+            });
+        }
+
+        // 在适当的地方调用
+        debugVisualizer();
+
+        // 音频可视化相关代码
+        class AudioVisualizer {
+            constructor() {
+                this.canvas = document.getElementById('visualizer');
+                this.ctx = this.canvas.getContext('2d');
+                this.audioContext = null;
+                this.analyser = null;
+                this.dataArray = null;
+                this.animationId = null;
+                this.isInitialized = false;
+
+                // 设备检测
+                this.isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+                this.isAndroid = /Android/.test(navigator.userAgent);
+                this.isMobile = this.isIOS || this.isAndroid;
+
+                // 立即初始化一次
+                this.initCanvas();
+                
+                // 添加 ResizeObserver 监听容器尺寸变化
+                this.resizeObserver = new ResizeObserver(() => {
+                    this.initCanvas();
+                });
+                
+                const container = document.querySelector('.visualizer-container');
+                this.resizeObserver.observe(container);
+                
+                // 延迟再次初始化以确保正确尺寸
+                setTimeout(() => {
+                    this.initCanvas();
+                }, 100);
+            }
+
+            initCanvas() {
+                const container = document.querySelector('.visualizer-container');
+                const rect = container.getBoundingClientRect();
+                
+                // 确保正方形尺寸
+                const size = Math.min(rect.width, rect.height);
+                
+                // 设置画布尺寸
+                this.canvas.width = size * (window.devicePixelRatio || 1);
+                this.canvas.height = size * (window.devicePixelRatio || 1);
+                
+                // 设置显示尺寸
+                this.canvas.style.width = `${size}px`;
+                this.canvas.style.height = `${size}px`;
+                
+                // 重置上下文缩放
+                this.ctx.setTransform(1, 0, 0, 1, 0, 0);
+                // 设置新的缩放
+                this.ctx.scale(window.devicePixelRatio || 1, window.devicePixelRatio || 1);
+                
+                // iOS 特殊处理
+                if (this.isIOS) {
+                    this.canvas.style.transform = 'translateZ(0)';
+                    container.style.transform = 'translate(-50%, -50%) translateZ(0)';
+                    container.style.webkitTransform = 'translate(-50%, -50%) translateZ(0)';
+                }
+            }
+
+            async init(audioElement) {
+                try {
+                    const AudioContext = window.AudioContext || window.webkitAudioContext;
+                    this.audioContext = new AudioContext();
+                    this.analyser = this.audioContext.createAnalyser();
+                    
+                    // 配置分析器
+                    this.analyser.fftSize = this.isMobile ? 64 : 128;
+                    this.analyser.smoothingTimeConstant = 0.8;
+                    
+                    const source = this.audioContext.createMediaElementSource(audioElement);
+                    source.connect(this.analyser);
+                    this.analyser.connect(this.audioContext.destination);
+                    
+                    this.dataArray = new Uint8Array(this.analyser.frequencyBinCount);
+                    this.isInitialized = true;
+                    
+                    return true;
+                } catch (error) {
+                    console.error('Visualizer initialization failed:', error);
+                    return false;
+                }
+            }
+
+            start() {
+                if (!this.isInitialized) return;
+                this.draw();
+            }
+
+            stop() {
+                if (this.animationId) {
+                    cancelAnimationFrame(this.animationId);
+                    this.animationId = null;
+                }
+            }
+
+            draw() {
+                if (!this.isInitialized) return;
+                this.animationId = requestAnimationFrame(() => this.draw());
+                this.analyser.getByteFrequencyData(this.dataArray);
+                
+                const width = this.canvas.width;
+                const height = this.canvas.height;
+                const centerX = width / 2;
+                const centerY = height / 2;
+                // 定义基础半径和幅度增加因子
+                const baseRadius = Math.min(centerX, centerY) * 0.5;
+                const amplitudeFactor = Math.min(centerX, centerY) * 0.2;
+                
+                // 清空画布
+                this.ctx.clearRect(0, 0, width, height);
+                this.ctx.save();
+                // 设置全局混合模式，提升现代感
+                this.ctx.globalCompositeOperation = 'lighter';
+                
+                const barCount = this.dataArray.length;
+                const points = [];
+                // 根据频谱数据计算曲线上的各点
+                for (let i = 0; i < barCount; i++) {
+                    const value = this.dataArray[i] / 255;
+                    const angle = (i / barCount) * Math.PI * 2;
+                    const r = baseRadius + (value * amplitudeFactor);
+                    const x = centerX + r * Math.cos(angle);
+                    const y = centerY + r * Math.sin(angle);
+                    points.push({ x, y });
+                }
+                // 用二次贝塞尔曲线绘制平滑闭合曲线
+                this.ctx.beginPath();
+                for (let i = 0; i < points.length; i++) {
+                    const current = points[i];
+                    const next = points[(i + 1) % points.length];
+                    const midX = (current.x + next.x) / 2;
+                    const midY = (current.y + next.y) / 2;
+                    if (i === 0) {
+                        this.ctx.moveTo(midX, midY);
+                    } else {
+                        this.ctx.quadraticCurveTo(current.x, current.y, midX, midY);
+                    }
+                }
+                this.ctx.closePath();
+                
+                // 创建渐变效果：从内到外颜色逐步变化
+                const grad = this.ctx.createRadialGradient(centerX, centerY, baseRadius * 0.8, centerX, centerY, baseRadius + amplitudeFactor);
+                grad.addColorStop(0, 'rgba(0, 200, 255, 0.8)');
+                grad.addColorStop(1, 'rgba(150, 0, 255, 0.2)');
+                
+                this.ctx.strokeStyle = grad;
+                this.ctx.lineWidth = 4;
+                // 添加柔和的发光效果
+                this.ctx.shadowColor = 'rgba(0, 200, 255, 0.7)';
+                this.ctx.shadowBlur = 25;
+                this.ctx.stroke();
+                
+                // 绘制中心静态发光圆点作为装饰
+                this.ctx.beginPath();
+                this.ctx.arc(centerX, centerY, baseRadius * 0.3, 0, Math.PI * 2);
+                this.ctx.fillStyle = 'rgba(0, 200, 255, 0.5)';
+                this.ctx.fill();
+                
+                this.ctx.restore();
+            }
+        }
+
+        // 创建可视化器实例
+        const visualizer = new AudioVisualizer();
+
+        // 在音频播放时初始化和启动可视化器
+        bgMusic.addEventListener('play', async () => {
+            if (!visualizer.isInitialized) {
+                await visualizer.init(bgMusic);
+            }
+            visualizer.start();
+        });
+
+        // 在音频暂停时停止可视化器
+        bgMusic.addEventListener('pause', () => {
+            visualizer.stop();
+        });
+
+        // 修改初始状态设置
+        musicButton.classList.add('playing'); // 默认添加播放状态类
+    </script>
+</body>
+</html> 

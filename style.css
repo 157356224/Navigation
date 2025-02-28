@@ -1,0 +1,604 @@
+/* 重置基础样式 */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none; /* iOS Safari */
+}
+
+/* 全局基本样式 */
+body {
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  color: #fff;
+  overflow-x: hidden;
+  min-height: 100vh;
+  background-color: #000;
+  /* 适配 iPhone X 及以上机型的安全区域 */
+  padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+  /* 防止页面弹性滚动 */
+  position: fixed;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+}
+
+/* 主容器样式优化 */
+#mainContainer {
+  width: 90%;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 40px 20px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-height: 100vh;
+  justify-content: center;
+  padding-top: env(safe-area-inset-top);
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+/* 个人资料区域样式 */
+.profile-section {
+  margin-bottom: 40px;
+  position: relative;
+  z-index: 2;
+}
+
+.profile-section h1 {
+  font-size: 2.5rem;
+  margin: 25px 0 10px;
+  color: #fff;
+  text-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.profile-section .tagline {
+  font-size: 1.2rem;
+  color: rgba(255,255,255,0.8);
+  letter-spacing: 1px;
+  position: relative;
+  width: 100%;
+  text-align: center;
+  height: 2em;
+}
+
+/* 头像容器样式优化 */
+.avatar-container {
+  position: relative;
+  width: 100px;
+  height: 100px;
+  margin: 0 auto 20px;
+  border-radius: 50%;
+  overflow: visible;
+  box-shadow: 0 0 30px rgba(0,0,0,0.3);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.avatar-container:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 15px 30px rgba(0,0,0,0.4);
+}
+
+/* 头像样式 */
+.avatar {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 50%;
+  z-index: 2;
+  transition: transform 0.3s ease;
+  will-change: transform; /* 硬件加速 */
+  -webkit-backface-visibility: hidden; /* iOS 优化 */
+  backface-visibility: hidden;
+}
+
+/* 添加头像边框光效 */
+.avatar::after {
+  content: '';
+  position: absolute;
+  top: -2px;
+  left: -2px;
+  right: -2px;
+  bottom: -2px;
+  border-radius: 50%;
+  background: linear-gradient(45deg, #ff3366, #00ccff);
+  z-index: 1;
+  opacity: 0.5;
+  animation: borderGlow 2s linear infinite;
+}
+
+/* 可视化器容器 */
+.visualizer-container {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 200px;
+  height: 200px;
+  transform: translate(-50%, -50%);
+  z-index: 1;
+  pointer-events: none;
+  aspect-ratio: 1/1; /* 强制保持 1:1 比例 */
+}
+
+/* 可视化器画布 */
+#visualizer {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  transform: translateZ(0);
+  -webkit-transform: translateZ(0);
+  opacity: 0.85;
+  aspect-ratio: 1/1; /* 强制保持 1:1 比例 */
+}
+
+/* 社交卡片区域样式 */
+.social-section {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 15px;
+  width: 100%;
+  max-width: 350px;
+  margin: 0 auto;
+  padding: 0;  /* 移除左右内边距 */
+  justify-content: center;  /* 网格水平居中 */
+  align-items: center;      /* 网格垂直居中 */
+}
+
+/* 社交卡片现代化设计 */
+.social-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 15px;
+  backdrop-filter: blur(8px);
+  background: rgba(255,255,255,0.1);
+  border: 1px solid rgba(255,255,255,0.2);
+  border-radius: 10px;
+  transition: all 0.3s ease;
+  text-decoration: none;
+  aspect-ratio: 1;
+  min-height: 90px;
+}
+
+/* 卡片悬浮效果 */
+.social-card:hover {
+  background: rgba(255,255,255,0.15);
+  transform: translateY(-5px);
+  box-shadow: 0 10px 20px rgba(0,0,0,0.2);
+}
+
+/* 添加图标悬停动画 */
+.social-card img {
+  width: 32px;
+  height: 32px;
+  margin-bottom: 6px;
+  filter: brightness(1.1);
+  transition: transform 0.3s ease;
+}
+
+.social-card:hover img {
+  transform: scale(1.1) rotate(5deg);
+}
+
+/* 文字样式 */
+.social-name {
+  font-size: 14px;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.95);
+  margin-top: 8px;
+  text-align: center;
+}
+
+/* 响应式设计增强 */
+@media (max-width: 768px) {
+  .profile-section h1 {
+    font-size: 2rem;
+  }
+
+  .social-section {
+    max-width: 300px;
+    gap: 10px;
+    padding: 0;  /* 移除移动端的内边距 */
+  }
+
+  /* 调整卡片内部布局 */
+  .social-card {
+    padding: 10px;
+    min-height: 70px;
+  }
+
+  /* 调整图标大小 */
+  .social-card img {
+    width: 24px;
+    height: 24px;
+    margin-bottom: 4px;
+  }
+
+  /* 调整文字大小 */
+  .social-name {
+    font-size: 12px;
+    margin-top: 4px;
+  }
+}
+
+/* 小屏幕设备进一步优化 */
+@media (max-width: 480px) {
+  .social-section {
+    max-width: 280px;
+    gap: 8px;
+    padding: 0;  /* 确保小屏幕也没有内边距 */
+  }
+
+  .social-card {
+    padding: 8px;
+    min-height: 60px;
+  }
+
+  .social-card img {
+    width: 20px;
+    height: 20px;
+  }
+
+  .social-name {
+    font-size: 10px;
+    margin-top: 3px;
+  }
+}
+
+/* 超小屏幕设备优化 */
+@media (max-width: 320px) {
+  .social-section {
+    max-width: 240px;
+    gap: 6px;
+  }
+
+  .social-card {
+    padding: 6px;
+    min-height: 50px;
+  }
+}
+
+/* 点击效果 */
+.social-card:active {
+  transform: scale(0.95);
+}
+
+/* 添加平滑滚动 */
+html {
+  scroll-behavior: smooth;
+}
+
+/* 添加背景模糊效果 */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background: inherit;
+  z-index: -1;
+}
+
+/* 欢迎页面样式增强 */
+.welcome-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: radial-gradient(circle at center, rgba(0,0,0,0.7) 0%, rgba(0,0,0,0.9) 100%);
+    backdrop-filter: blur(10px);
+    z-index: 9999;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    opacity: 1;
+    visibility: visible;
+    transition: all 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* 添加淡出类 */
+.welcome-overlay.fade-out {
+    opacity: 0;
+    visibility: hidden;
+    backdrop-filter: blur(0px);
+    -webkit-backdrop-filter: blur(0px);
+}
+
+.welcome-content {
+    text-align: center;
+    padding: 40px 60px;
+    background: transparent;
+    transform: translateY(0);
+    opacity: 1;
+    transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+    animation: welcomeFadeIn 1s ease-out;
+}
+
+/* 添加内容淡出类 */
+.welcome-overlay.fade-out .welcome-content {
+    transform: translateY(20px);
+    opacity: 0;
+}
+
+.welcome-content h1 {
+    font-size: 3.5rem;
+    font-weight: 600;
+    margin-bottom: 20px;
+    background: linear-gradient(135deg, #ffffff 0%, #f0f0f0 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    letter-spacing: -0.5px;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+}
+
+.welcome-content p {
+    font-size: 1.2rem;
+    color: rgba(255, 255, 255, 0.8);
+    font-weight: 400;
+    letter-spacing: 0.5px;
+    margin-top: 10px;
+}
+
+/* 移除悬浮效果 */
+.welcome-content:hover {
+    transform: none;
+    box-shadow: none;
+}
+
+.avatar:hover {
+    transform: scale(1.1);
+}
+
+/* 音乐控制按钮样式优化 */
+.music-control {
+    position: fixed;
+    bottom: max(20px, env(safe-area-inset-bottom));
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 100;
+    width: auto;
+    white-space: nowrap; /* 防止文字换行 */
+}
+
+.music-control button {
+    position: relative;
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 30px;
+    padding: 10px 20px;
+    padding-left: 35px;
+    color: white;
+    font-size: 14px;
+    cursor: pointer;
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    transition: all 0.3s ease;
+    display: flex; /* 使用 flex 布局 */
+    align-items: center; /* 垂直居中 */
+    gap: 8px; /* 图标和文字之间的间距 */
+}
+
+/* 修改音乐控制按钮的状态指示点样式 */
+.music-control button::before {
+    content: '';
+    position: absolute;
+    left: 15px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background-color: #4CAF50; /* 默认为绿色 */
+    transition: background-color 0.3s ease;
+}
+
+/* 暂停状态指示点 */
+.music-control button.paused::before {
+    background-color: #f44336; /* 红色 - 暂停状态 */
+}
+
+.music-control button:hover {
+    background: rgba(255, 255, 255, 0.2);
+    transform: translateY(-2px);
+}
+
+.music-control i {
+    margin-right: 8px;
+    margin-left: 5px;
+}
+
+/* 音量指示器样式优化 */
+.volume-indicator {
+  position: fixed;
+  bottom: 80px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 100;
+}
+
+/* 背景视频样式 */
+.bg-video {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    min-width: 100%;
+    min-height: 100%;
+    width: auto;
+    height: auto;
+    transform: translateX(-50%) translateY(-50%);
+    z-index: -1;
+    opacity: 0.3;
+}
+
+/* iOS 特定优化 */
+@supports (-webkit-touch-callout: none) {
+    .visualizer-container {
+        transform: translate(-50%, -50%) translateZ(0);
+        -webkit-transform: translate(-50%, -50%) translateZ(0);
+        will-change: transform;
+    }
+    
+    #visualizer {
+        transform: translateZ(0);
+        -webkit-transform: translateZ(0);
+        will-change: transform;
+    }
+}
+
+@keyframes welcomeFadeIn {
+    from {
+        transform: translateY(30px);
+        opacity: 0;
+    }
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+/* 添加加载状态样式 */
+.loading {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: #000;
+    z-index: 9999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.loading-spinner {
+    width: 40px;
+    height: 40px;
+    border: 3px solid rgba(255,255,255,0.1);
+    border-top-color: #fff;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+/* 移动端适配 */
+@media (max-width: 768px) {
+    .music-control button {
+        padding: 8px 16px;
+        padding-left: 30px;
+        font-size: 12px;
+    }
+
+    .music-control button::before {
+        left: 12px;
+        width: 6px;
+        height: 6px;
+    }
+
+    .music-control i {
+        font-size: 12px;
+        margin-right: 4px;
+        margin-left: 2px;
+    }
+}
+
+/* 超小屏幕适配 */
+@media (max-width: 320px) {
+    .music-control button {
+        padding: 6px 12px;
+        padding-left: 25px;
+        font-size: 11px;
+    }
+}
+
+/* 防止图片拖拽 */
+img {
+    -webkit-user-drag: none;
+    -khtml-user-drag: none;
+    -moz-user-drag: none;
+    -o-user-drag: none;
+    user-drag: none;
+    pointer-events: none;
+}
+
+/* 防止链接拖拽 */
+a {
+    -webkit-user-drag: none;
+    -khtml-user-drag: none;
+    -moz-user-drag: none;
+    -o-user-drag: none;
+    user-drag: none;
+}
+
+@keyframes blink-caret {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
+}
+
+/* 为容器添加相对定位和居中对齐 */
+.tagline {
+   position: relative;
+   width: 100%;
+   text-align: center;
+   height: 2em; /* 根据需要调整高度 */
+}
+
+/* 打字机整体样式 */
+.typewriter {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  overflow: hidden;         /* 隐藏超出部分 */
+  white-space: nowrap;      /* 强制不换行 */
+  font-family: 'Inconsolata', Courier, monospace;  /* 使用更自然的字体 */
+  font-size: 1.5em;
+  letter-spacing: 0.05em;
+  text-shadow: 0 0 3px rgba(255,255,255,0.8);
+  width: 0;                 /* 初始宽度 */
+}
+
+/* 使用伪元素实现光标，仅当内容宽度大于0时显示 */
+.typewriter:after {
+  content: "";
+  position: absolute;
+  right: 0;
+  top: 0;
+  width: 2px;
+  height: 100%;
+  background: #fff;
+  animation: blink-caret 0.75s infinite;
+}
+
+/* 定义第一句的动画周期，周期总时长 14s */
+@keyframes typeCycle1 {
+  0% { width: 0; }
+  27% { width: 29ch; }       /* 大约4秒内完成打字 */
+  45% { width: 29ch; }       /* 保持一会 */
+  50% { width: 0; }          /* 平滑擦除效果，确保7秒内完成 */
+  100% { width: 0; }
+}
+
+/* 定义第二句的动画周期，周期总时长 14s */
+@keyframes typeCycle2 {
+  0% { width: 0; }
+  27% { width: 23ch; }       /* 打字时间 */
+  45% { width: 23ch; }       /* 稍作停留 */
+  50% { width: 0; }          /* 平滑擦除效果，确保其动画在延迟后与第一句错开 */
+  100% { width: 0; }
+}
+
+/* 为 .text1 和 .text2 分别添加动画，使用平滑的线性动画 */
+.text1 {
+  animation: typeCycle1 14s infinite linear;
+}
+
+.text2 {
+  animation: typeCycle2 14s infinite linear;
+  animation-delay: 7s;
+}

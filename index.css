@@ -1,0 +1,8 @@
+.text1 {
+  animation: typeCycle1 14s steps(29, end) infinite;
+}
+
+.text2 {
+  animation: typeCycle2 14s steps(23, end) infinite;
+  animation-delay: 7s;
+} 
